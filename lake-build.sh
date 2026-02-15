@@ -45,8 +45,8 @@ echo ""
 docker run --rm \
   --name "lean4-build-${BUILD_ID}" \
   --network lean-build-network \
-#  --memory="16g" \
-#  --cpus="8" \
+  --memory="16g" \
+  --cpus="8" \
 #  -v "${SOURCE_DIR}:/source:ro" \           # Source read-only
 #  -v lean4-working-copy:/build:rw \
 #  -v lean-elan-cache:/root/.elan:rw \
