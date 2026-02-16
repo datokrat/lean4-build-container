@@ -20,7 +20,8 @@ RUN apt-get install -y \
     git curl build-essential cmake clang lld \
     libgmp-dev ccache ninja-build rsync \
     pkg-config libuv1-dev zlib1g-dev \
-    libssl-dev
+    libssl-dev \
+    inetutils-ping
 
 RUN rm -rf /var/lib/apt/lists/*
 
@@ -46,3 +47,8 @@ RUN elan --version # && lean --version
 ENV CCACHE_DIR=/build/.ccache
 
 WORKDIR /build
+
+# RUN curl -fsSL https://claude.ai/install.sh | bash
+COPY install-claude.sh install-claude.sh
+RUN bash install-claude.sh
+RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
