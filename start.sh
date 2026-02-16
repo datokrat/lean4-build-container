@@ -1,9 +1,5 @@
 #!/bin/bash
 
-set -euo pipefail
+set -euxo pipefail
 
-docker volume create lean4-build-cache
-docker volume create lean-elan-cache
-
-docker network create lean-build-network 2>/dev/null || true
-
+container start --interactive "lean4-build-$1"

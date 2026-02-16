@@ -10,7 +10,7 @@ WORKING_COPY_VOLUME="lean4-working-copy-${BUILD_ID}"
 # this would create nested mounts OUTPUT_DIR="$(pwd)/isolated-builds/${BUILD_ID}"
 
 mkdir -p "${OUTPUT_DIR}"
-ln -s ./vm-output "${OUTPUT_DIR}"
+ln -s "${OUTPUT_DIR}" ./vm-output
 
 echo "Lean4 Isolated Build ${BUILD_ID}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
