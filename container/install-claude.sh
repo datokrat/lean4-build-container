@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Source: https://claude.ai/install.sh. This is NOT under the Apache license of this repository.
+# I have only copied it in here because I experienced a lot of instability with the link.
+
 set -e
 
 # Parse command line arguments

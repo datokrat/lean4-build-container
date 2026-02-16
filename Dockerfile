@@ -51,9 +51,10 @@ WORKDIR /build
 RUN mkdir /scripts
 
 # RUN curl -fsSL https://claude.ai/install.sh | bash
-COPY install-claude.sh /scripts/install-claude.sh
+COPY container/install-claude.sh /scripts/install-claude.sh
+COPY container/sync.sh /scripts/sync.sh
+COPY container/build.sh /scripts/build.sh
+
 RUN bash /scripts/install-claude.sh
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
-COPY container/sync.sh /scripts/sync.sh
-COPY container/build.sh /scripts/build.sh
