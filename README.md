@@ -24,7 +24,7 @@ The container running the Lean build is designed to have very limited permission
 
 ## Working inside a container
 
-* Use `/scripts/sync.sh` to rsync the files from the current working directory into the container.
+* Use `/scripts/sync.sh` to rsync the files from the current working directory into the container. This assumes that the current working directory is `lean4`'s root directory.
 * Use `/scripts/build.sh` to trigger the Lean build.
 * Claude Code is pre-installed, but you will need to do the set-up in every container again (including generating an auth token).
 
