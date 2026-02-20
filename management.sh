@@ -4,21 +4,13 @@ set -euo pipefail
 
 SOURCE_DIR="$(cd "${1:-.}" && pwd)"
 BUILD_TIMEOUT="${2:-1800}"
-BUILD_ID=$(date +%s)
-OUTPUT_DIR="${HOME}/.lean4-builds/${BUILD_ID}"
-WORKING_COPY_VOLUME="lean4-working-copy-${BUILD_ID}"
+OUTPUT_DIR="${HOME}/.lean4-builds/management"
 BUILDS_VOLUME=lean-builds
-# this would create nested mounts OUTPUT_DIR="$(pwd)/isolated-builds/${BUILD_ID}"
 
-mkdir -p "${OUTPUT_DIR}"
-ln -fs "${OUTPUT_DIR}" ./vm-output
-touch .proxyrc
-
-echo "Lean4 Isolated Build ${BUILD_ID}"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+mkdir -p "$OUTPUT_DIR"
 
 if ! container status &>/dev/null; then
-  echo "⚠ Starting container system..."
+  echo "Starting container system..."
   container system start # these are Colima-specific arguments: --cpu 8 --memory 16 --mount-type=virtiofs
   sleep 5
 fi
@@ -39,56 +31,34 @@ if ! container list | grep -q lean-squid-proxy; then
   sleep 3
 fi
 
-# container network connect leanbuild lean-squid-proxy
-
 if ! container list | grep -q lean-squid-proxy; then
   echo "❌ Proxy failed to start!"
   container logs lean-squid-proxy
   exit 1
 fi
 
-# PROXY_HOST=$(container inspect lean-squid-proxy -f '{{.NetworkSettings.Networks.leanbuild.IPAddress}}')
 PROXY_IP=$(container inspect lean-squid-proxy | \
   jq -r '.[0].networks[] | select(.network=="leanbuild") | .ipv4Address' | \
   cut -d'/' -f1)
 
-# echo "DEBUG: PROXY_HOST='${PROXY_HOST}'"
-
-
 echo "Proxy:   ${PROXY_IP}:3128"
 echo "Source:  ${SOURCE_DIR}"
-echo "Output:  ${OUTPUT_DIR}"
 echo "Timeout: ${BUILD_TIMEOUT}s"
 echo ""
 
-container run -it \
-  --name "lean4-build-${BUILD_ID}" \
+container run --rm -it \
+  --name "lean4-management" \
   --network leanbuild \
   --memory="16g" \
   --cpus="12" \
   -v "${SOURCE_DIR}:/source:ro" \
-  -v "${WORKING_COPY_VOLUME}:/build:rw" \
+  -v "${BUILDS_VOLUME}:/builds:rw" \
   -v lean-elan-cache:/root/.elan:rw \
   -v "${OUTPUT_DIR}:/output:rw" \
-  -v "${BUILDS_VOLUME}:/builds:rw" \
   -e BUILD_TIMEOUT="${BUILD_TIMEOUT}" \
   -e http_proxy="http://${PROXY_IP}:3128" \
   -e https_proxy="http://${PROXY_IP}:3128" \
-  lean4-isolated \
+  lean4-management \
   bash
 
 exit
-
-EXIT_CODE=$?
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if [ $EXIT_CODE -eq 0 ]; then
-  echo "✓ Build ${BUILD_ID} completed successfully"
-  echo "  Output: ${OUTPUT_DIR}"
-else
-  echo "✗ Build ${BUILD_ID} failed (exit code: ${EXIT_CODE})"
-  echo "  Log: ${OUTPUT_DIR}/build.log"
-fi
-
-exit $EXIT_CODE
