@@ -10,12 +10,12 @@ WORKING_COPY_VOLUME="lean4-working-copy-${BUILD_ID}"
 # this would create nested mounts OUTPUT_DIR="$(pwd)/isolated-builds/${BUILD_ID}"
 
 mkdir -p "${OUTPUT_DIR}"
-ln -s "${OUTPUT_DIR}" ./vm-output
+ln -fs "${OUTPUT_DIR}" ./vm-output
+touch .proxyrc
 
 echo "Lean4 Isolated Build ${BUILD_ID}"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Stelle sicher dass alles läuft
 if ! container status &>/dev/null; then
   echo "⚠ Starting container system..."
   container system start # these are Colima-specific arguments: --cpu 8 --memory 16 --mount-type=virtiofs
@@ -40,7 +40,6 @@ fi
 
 # container network connect leanbuild lean-squid-proxy
 
-# Proxy läuft? Check!
 if ! container list | grep -q lean-squid-proxy; then
   echo "❌ Proxy failed to start!"
   container logs lean-squid-proxy
@@ -65,7 +64,7 @@ container run -it \
   --name "lean4-build-${BUILD_ID}" \
   --network leanbuild \
   --memory="16g" \
-  --cpus="8" \
+  --cpus="12" \
   -v "${SOURCE_DIR}:/source:ro" \
   -v "${WORKING_COPY_VOLUME}:/build:rw" \
   -v lean-elan-cache:/root/.elan:rw \
