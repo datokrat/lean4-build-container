@@ -6,6 +6,7 @@ SOURCE_DIR="$(cd "${1:-.}" && pwd)"
 BUILD_TIMEOUT="${2:-1800}"
 OUTPUT_DIR="${HOME}/.lean4-builds/management"
 BUILDS_VOLUME=lean-builds
+CONTAINER_CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -25,7 +26,7 @@ if ! container list | grep -q lean-squid-proxy; then
     --name lean-squid-proxy \
     --network lean-proxy-network \
     --network leanbuild \
-    -v ~/code/lean-isolated/squid.conf:/etc/squid/squid.conf:ro \
+    -v "$CONTAINER_CONFIG_DIR/squid.conf:/etc/squid/squid.conf:ro" \
     -p 127.0.0.1:3128:3128 \
     ubuntu/squid:latest
   sleep 3

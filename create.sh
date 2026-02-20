@@ -8,7 +8,7 @@ BUILD_ID=$(date +%s)
 OUTPUT_DIR="${HOME}/.lean4-builds/${BUILD_ID}"
 WORKING_COPY_VOLUME="lean4-working-copy-${BUILD_ID}"
 BUILDS_VOLUME=lean-builds
-# this would create nested mounts OUTPUT_DIR="$(pwd)/isolated-builds/${BUILD_ID}"
+CONTAINER_CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p "${OUTPUT_DIR}"
 ln -fs "${OUTPUT_DIR}" ./vm-output
@@ -33,7 +33,7 @@ if ! container list | grep -q lean-squid-proxy; then
     --name lean-squid-proxy \
     --network lean-proxy-network \
     --network leanbuild \
-    -v ~/code/lean-isolated/squid.conf:/etc/squid/squid.conf:ro \
+    -v "$CONTAINER_CONFIG_DIR/squid.conf:/etc/squid/squid.conf:ro" \
     -p 127.0.0.1:3128:3128 \
     ubuntu/squid:latest
   sleep 3
