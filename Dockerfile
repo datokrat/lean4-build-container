@@ -73,6 +73,16 @@ COPY container/sync.sh /scripts/sync.sh
 COPY container/build.sh /scripts/build.sh
 COPY container/restore.sh /scripts/restore.sh
 
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+RUN code-server --install-extension leanprover.lean4
+
+RUN mkdir -p /certs
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /certs/key.pem -out /certs/cert.pem -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
+# COPY container/code-settings.json /root/.local/share/code-server/User/settings.json
+COPY container/code.sh /scripts/code.sh
+COPY container/code-server-config.yaml /root/.config/code-server/config.yaml
+COPY container/code-settings.json /root/.local/share/code-server/User/settings.json
+
 RUN rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
