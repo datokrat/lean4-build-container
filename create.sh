@@ -74,6 +74,7 @@ container run -it \
   -e BUILD_TIMEOUT="${BUILD_TIMEOUT}" \
   -e http_proxy="http://${PROXY_IP}:3128" \
   -e https_proxy="http://${PROXY_IP}:3128" \
+  -e IS_SANDBOX=1 /
   lean4-isolated \
   bash
 
