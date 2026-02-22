@@ -50,6 +50,7 @@ RUN elan --version
 
 COPY container/sync.sh /scripts/sync.sh
 COPY container/management-build.sh /scripts/build.sh
+COPY container/management-build-smart.sh /scripts/build-smart.sh
 COPY container/management-restore.sh /scripts/restore.sh
 
 RUN rm -rf /var/lib/apt/lists/*

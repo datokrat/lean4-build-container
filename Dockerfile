@@ -53,6 +53,10 @@ COPY container/install-claude.sh /scripts/install-claude.sh
 RUN bash /scripts/install-claude.sh
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 
+COPY container/.claude /root/.claude
+RUN cp /root/.claude/.claude.json /root/.claude.json || true
+# COPY container/.claude.json /root/.claude.json
+
 RUN apt-get install -y wget
 
 RUN cd /scripts && wget https://elan.lean-lang.org/elan-init.sh
@@ -62,6 +66,8 @@ RUN echo "source /root/.elan/env" >> /root/.bashrc
 # RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 COPY container/install-uv.sh /scripts/install-uv.sh
 RUN sh /scripts/install-uv.sh
+
+WORKDIR /build
 
 RUN ~/.local/bin/claude plugin marketplace add DrCatHicks/learning-opportunities
 RUN ~/.local/bin/claude plugin install learning-opportunities
@@ -84,6 +90,4 @@ COPY container/code-server-config.yaml /root/.config/code-server/config.yaml
 COPY container/code-settings.json /root/.local/share/code-server/User/settings.json
 
 RUN rm -rf /var/lib/apt/lists/*
-
-WORKDIR /build
 

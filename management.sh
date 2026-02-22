@@ -10,7 +10,7 @@ CONTAINER_CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p "$OUTPUT_DIR"
 
-if ! container status &>/dev/null; then
+if ! container system status &>/dev/null; then
   echo "Starting container system..."
   container system start # these are Colima-specific arguments: --cpu 8 --memory 16 --mount-type=virtiofs
   sleep 5

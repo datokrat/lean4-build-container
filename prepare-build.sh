@@ -2,24 +2,26 @@
 
 set -euo pipefail
 
-SOURCE_DIR="$(cd "${1:-.}" && pwd)"
-BUILD_TIMEOUT="${2:-1800}"
-BUILD_ID=$(date +%s)
-OUTPUT_DIR="${HOME}/.lean4-builds/${BUILD_ID}"
-WORKING_COPY_VOLUME="lean4-working-copy-${BUILD_ID}"
+if [ -z "${1:-}" ]; then
+  echo "Usage: $0 <ref> [source_dir] [build_timeout]"
+  echo "  ref:           Git commit hash or branch name to build"
+  echo "  source_dir:    Path to source repository (default: current directory)"
+  echo "  build_timeout: Build timeout in seconds (default: 1800)"
+  exit 1
+fi
+
+REF="$1"
+SOURCE_DIR="$(cd "${2:-.}" && pwd)"
+BUILD_TIMEOUT="${3:-1800}"
+OUTPUT_DIR="${HOME}/.lean4-builds/management"
 BUILDS_VOLUME=lean-builds
 CONTAINER_CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-mkdir -p "${OUTPUT_DIR}"
-ln -fs "${OUTPUT_DIR}" ./vm-output
-touch .proxyrc
-
-echo "Lean4 Isolated Build ${BUILD_ID}"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+mkdir -p "$OUTPUT_DIR"
 
 if ! container system status &>/dev/null; then
-  echo "⚠ Starting container system..."
-  container system start # these are Colima-specific arguments: --cpu 8 --memory 16 --mount-type=virtiofs
+  echo "Starting container system..."
+  container system start
   sleep 5
 fi
 
@@ -39,57 +41,45 @@ if ! container list | grep -q lean-squid-proxy; then
   sleep 3
 fi
 
-# container network connect leanbuild lean-squid-proxy
-
 if ! container list | grep -q lean-squid-proxy; then
   echo "❌ Proxy failed to start!"
   container logs lean-squid-proxy
   exit 1
 fi
 
-# PROXY_HOST=$(container inspect lean-squid-proxy -f '{{.NetworkSettings.Networks.leanbuild.IPAddress}}')
 PROXY_IP=$(container inspect lean-squid-proxy | \
   jq -r '.[0].networks[] | select(.network=="leanbuild") | .ipv4Address' | \
   cut -d'/' -f1)
 
-# echo "DEBUG: PROXY_HOST='${PROXY_HOST}'"
-
-
 echo "Proxy:   ${PROXY_IP}:3128"
 echo "Source:  ${SOURCE_DIR}"
-echo "Output:  ${OUTPUT_DIR}"
+echo "Ref:     ${REF}"
 echo "Timeout: ${BUILD_TIMEOUT}s"
 echo ""
 
-container run -it \
-  --name "lean4-build-${BUILD_ID}" \
+if container run --rm \
+  --name "lean4-management-build" \
   --network leanbuild \
   --memory="16g" \
   --cpus="12" \
   -v "${SOURCE_DIR}:/source:ro" \
-  -v "${WORKING_COPY_VOLUME}:/build:rw" \
+  -v "${BUILDS_VOLUME}:/builds:rw" \
   -v lean-elan-cache:/root/.elan:rw \
   -v "${OUTPUT_DIR}:/output:rw" \
-  -v "${BUILDS_VOLUME}:/builds:rw" \
+  -v "${CONTAINER_CONFIG_DIR}/container/sync.sh:/scripts/sync.sh:ro" \
+  -v "${CONTAINER_CONFIG_DIR}/container/management-build.sh:/scripts/build.sh:ro" \
+  -v "${CONTAINER_CONFIG_DIR}/container/management-build-smart.sh:/scripts/build-smart.sh:ro" \
   -e BUILD_TIMEOUT="${BUILD_TIMEOUT}" \
   -e http_proxy="http://${PROXY_IP}:3128" \
   -e https_proxy="http://${PROXY_IP}:3128" \
-  -e IS_SANDBOX=1 \
-  lean4-isolated \
-  bash
-
-exit
-
-EXIT_CODE=$?
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if [ $EXIT_CODE -eq 0 ]; then
-  echo "✓ Build ${BUILD_ID} completed successfully"
-  echo "  Output: ${OUTPUT_DIR}"
+  lean4-management \
+  bash /scripts/build-smart.sh "$REF"; then
+  echo ""
+  echo "✓ Build of ${REF} succeeded"
+  exit 0
 else
-  echo "✗ Build ${BUILD_ID} failed (exit code: ${EXIT_CODE})"
-  echo "  Log: ${OUTPUT_DIR}/build.log"
+  EXIT_CODE=$?
+  echo ""
+  echo "✗ Build of ${REF} failed (exit code: ${EXIT_CODE})"
+  exit $EXIT_CODE
 fi
-
-exit $EXIT_CODE
