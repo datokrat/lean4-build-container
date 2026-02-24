@@ -15,6 +15,7 @@ The container running the Lean build is designed to have very limited permission
 * Install Rosetta: `softwareupdate --install-rosetta`
 * Install Apple Containers: `brew install containers`
 * Do NOT try to [set up the local DNS domain](https://github.com/apple/container/blob/main/docs/tutorial.md). For me, it didn't work and broke DNS requests inside all containers and when building images.
+* Optional: Put your `.claude.json` and `.credentials.json` into `containers/.claude`.
 * Use `build-image.sh` to build the container image.
 
 ## Creating and starting containers
