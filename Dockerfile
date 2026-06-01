@@ -52,6 +52,8 @@ COPY container/install-claude.sh /scripts/install-claude.sh
 
 RUN bash /scripts/install-claude.sh
 RUN echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+RUN echo 'export LANG=C.utf8' >> ~/.bashrc
+RUN echo 'export LC_ALL=C.utf8' >> ~/.bashrc
 
 COPY container/.claude /root/.claude
 RUN cp /root/.claude/.claude.json /root/.claude.json || true
@@ -86,6 +88,7 @@ RUN mkdir -p /certs
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /certs/key.pem -out /certs/cert.pem -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
 # COPY container/code-settings.json /root/.local/share/code-server/User/settings.json
 COPY container/code.sh /scripts/code.sh
+COPY container/http.sh /scripts/http.sh
 COPY container/code-server-config.yaml /root/.config/code-server/config.yaml
 COPY container/code-settings.json /root/.local/share/code-server/User/settings.json
 

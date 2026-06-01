@@ -48,9 +48,11 @@ if ! container list | grep -q lean-squid-proxy; then
 fi
 
 # PROXY_HOST=$(container inspect lean-squid-proxy -f '{{.NetworkSettings.Networks.leanbuild.IPAddress}}')
-PROXY_IP=$(container inspect lean-squid-proxy | \
-  jq -r '.[0].networks[] | select(.network=="leanbuild") | .ipv4Address' | \
-  cut -d'/' -f1)
+# PROXY_IP=$(container inspect lean-squid-proxy | \
+#   jq -r '.[0].networks[] | select(.network=="leanbuild") | .ipv4Address' | \
+#   cut -d'/' -f1)
+
+PROXY_IP=192.168.128.1
 
 # echo "DEBUG: PROXY_HOST='${PROXY_HOST}'"
 
@@ -75,8 +77,11 @@ container run -it \
   -e http_proxy="http://${PROXY_IP}:3128" \
   -e https_proxy="http://${PROXY_IP}:3128" \
   -e IS_SANDBOX=1 \
+  -e CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING=1 \
+  -e CLAUDE_CODE_AUTO_COMPACT_WINDOW=400000 \
   lean4-isolated \
   bash
+
 
 exit
 

@@ -1,0 +1,59 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SOURCE_DIR="$(cd "${1:-.}" && pwd)"
+BUILD_TIMEOUT="${2:-1800}"
+BUILD_ID=$(date +%s)
+OUTPUT_DIR="${HOME}/.lean4-builds/${BUILD_ID}"
+WORKING_COPY_VOLUME="lean4-working-copy-${BUILD_ID}"
+BUILDS_VOLUME=lean-builds
+CONTAINER_CONFIG_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+mkdir -p "${OUTPUT_DIR}"
+ln -fs "${OUTPUT_DIR}" ./vm-output
+touch .proxyrc
+
+echo "Lean4 Isolated Build ${BUILD_ID}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if ! container system status &>/dev/null; then
+  echo "⚠ Starting container system..."
+  container system start # these are Colima-specific arguments: --cpu 8 --memory 16 --mount-type=virtiofs
+  sleep 5
+fi
+
+if ! container list | grep -q lean-squid-proxy; then
+  echo "⚠ Proxy not running, starting..."
+  container network rm leanbuild lean-proxy-network 2>/dev/null || true
+  container network create --internal leanbuild 2>/dev/null || true
+  container network create lean-proxy-network 2>/dev/null || true
+  container rm -f lean-squid-proxy || true
+  container run -d \
+    --name lean-squid-proxy \
+    --network lean-proxy-network \
+    -v "$CONTAINER_CONFIG_DIR/squid.conf:/etc/squid/squid.conf:ro" \
+    -p 192.168.128.1:3128:3128 \
+    ubuntu/squid:latest
+  sleep 3
+fi
+
+# container network connect leanbuild lean-squid-proxy
+
+if ! container list | grep -q lean-squid-proxy; then
+  echo "❌ Proxy failed to start!"
+  container logs lean-squid-proxy
+  exit 1
+fi
+
+# PROXY_HOST=$(container inspect lean-squid-proxy -f '{{.NetworkSettings.Networks.leanbuild.IPAddress}}')
+# PROXY_IP=$(container inspect lean-squid-proxy | \
+#   jq -r '.[0].networks[] | select(.network=="leanbuild") | .ipv4Address' | \
+#   cut -d'/' -f1)
+
+PROXY_IP=192.168.128.1
+
+# echo "DEBUG: PROXY_HOST='${PROXY_HOST}'"
+
+
+echo "Proxy:   ${PROXY_IP}:3128"
