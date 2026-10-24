@@ -68,6 +68,7 @@ container run -it \
   --network leanbuild \
   --memory="16g" \
   --cpus="12" \
+  --cap-add="SYS_ADMIN" \
   -v "${SOURCE_DIR}:/source:ro" \
   -v "${WORKING_COPY_VOLUME}:/build:rw" \
   -v lean-elan-cache:/root/.elan:rw \
